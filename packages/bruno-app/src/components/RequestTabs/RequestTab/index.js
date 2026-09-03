@@ -197,6 +197,7 @@ const RequestTab = ({ tab, collection, tabIndex, collectionRequestTabs, folderUi
     'preferences',
     'workspaceOverview',
     'workspaceEnvironments',
+    'git',
     'openapi-sync',
     'openapi-spec',
     'mock-server',

@@ -18,7 +18,8 @@ import {
   IconFileOff,
   IconCode,
   IconAppWindow,
-  IconTransform
+  IconTransform,
+  IconGitBranch
 } from '@tabler/icons';
 import IconSparkles from 'components/Icons/IconSparkles';
 import OpenAPISyncIcon from 'components/Icons/OpenAPISync';
@@ -300,6 +301,14 @@ const CollectionHeader = ({ collection, isScratchCollection }) => {
     }));
   };
 
+  const viewGit = () => {
+    dispatch(addTab({
+      uid: uuid(),
+      collectionUid: collection.uid,
+      type: 'git'
+    }));
+  };
+
   const viewMockServer = () => {
     const existingInstance = mockServerInstances.find((instance) => (
       instance.sourceType === 'collection' && instance.collectionUid === collection.uid
@@ -329,6 +338,7 @@ const CollectionHeader = ({ collection, isScratchCollection }) => {
     ...(!appAvailable
       ? [{ id: 'file-mode', label: collection.fileMode ? 'Switch to Code Mode' : 'Switch to File Mode', leftSection: collection.fileMode ? IconFileOff : IconFileCode, onClick: handleFileModeClick }]
       : []),
+    { id: 'git', label: 'Git', leftSection: IconGitBranch, onClick: viewGit },
     ...(!hasOpenApiSyncConfigured
       ? [{ id: 'openapi-sync', label: 'OpenAPI', leftSection: OpenAPISyncIcon, onClick: viewOpenApiSync }]
       : []),

@@ -1809,6 +1809,7 @@ module.exports = {
   getStashFiles,
   getStashFileDiff,
   getFileContentAtCommit,
+  supportsVisualDiff,
   getFileContentForVisualDiff,
   getWorkingFileContentForVisualDiff,
   getStashFileContentForVisualDiff

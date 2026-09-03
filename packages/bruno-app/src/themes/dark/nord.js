@@ -286,19 +286,6 @@ const nordTheme = {
     }
   },
 
-  notifications: {
-    bg: colors.NORD0,
-    list: {
-      bg: colors.NORD0,
-      borderBottom: colors.NORD3,
-      hoverBg: colors.NORD3,
-      active: {
-        bg: colors.NORD2,
-        hoverBg: '#5d6b83'
-      }
-    }
-  },
-
   modal: {
     title: {
       color: colors.NORD4,

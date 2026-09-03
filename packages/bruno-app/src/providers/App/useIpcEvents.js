@@ -49,7 +49,6 @@ import { globalEnvironmentsUpdateEvent, updateGlobalEnvironments, _clearScriptGl
 import { collectionAddOauth2CredentialsByUrl, collectionClearOauth2CredentialsByCredentialsId, updateCollectionLoadingState, collectionLoadedFromTree } from 'providers/ReduxStore/slices/collections/index';
 import { migrationProgressEvent } from 'providers/ReduxStore/slices/collection-migration';
 import { addLog } from 'providers/ReduxStore/slices/logs';
-import { loadNotifications } from 'providers/ReduxStore/slices/notifications';
 import { updateSystemResources } from 'providers/ReduxStore/slices/performance';
 import { apiSpecAddFileEvent, apiSpecChangeFileEvent } from 'providers/ReduxStore/slices/apiSpec';
 
@@ -407,9 +406,6 @@ const useIpcEvents = () => {
       dispatch(mockServerFileDeletedEvent(workspaceUid, mockServerUid));
     });
 
-    const removeLoadNotificationsListener = ipcRenderer.on('main:load-notifications', (notifications) => {
-      dispatch(loadNotifications(notifications));
-    });
     dispatch(syncRunningMockServers());
 
     const removeCollectionTreeLoadedListener = ipcRenderer.on('main:collection-tree-loaded', ({ collectionUid, tree }) => {
@@ -469,7 +465,6 @@ const useIpcEvents = () => {
       removeMockServerAddedListener();
       removeMockServerChangedListener();
       removeMockServerDeletedListener();
-      removeLoadNotificationsListener();
     };
   }, [isElectron]);
 };

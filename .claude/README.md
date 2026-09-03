@@ -17,6 +17,7 @@ automatically when you launch from the project root.
 | `reference/architecture.md` | The monorepo map — request pipeline, sandbox, file formats, core types, dependency versions. Too big to auto-load. | On demand only (Claude reads it when a task needs it). |
 | `skills/code-review/` | `/code-review` — reviews the current branch/PR via focused lenses in parallel; takes base pointers from `.coderabbit.yaml`. | On invocation / when relevant. |
 | `skills/write-e2e-test/` | `/write-e2e-test` — writes a Playwright E2E test following Bruno's fixtures and conventions. | On invocation / when relevant. |
+| `skills/parallel-feature/` | `/parallel-feature` — ships a multi-task feature as parallel subagent waves: preflight gates, frozen cross-agent contracts, wave dispatch, task lint, orchestrator-side verification. | On invocation / when relevant. |
 | `settings.json` | Shared project settings, checked in for the team. Denies `Read` on `**/dist/**` so Claude works from `src/`, not generated bundles. | At startup, from the launch directory. |
 | `settings.local.json` | Your machine-specific overrides. Gitignored — never committed. | At startup, if present. |
 
@@ -43,6 +44,7 @@ Start Claude Code (`claude`) from the Bruno root and everything loads on its own
 ```bash
 /code-review            # review the current branch against main before pushing
 /write-e2e-test         # scaffold a Playwright spec under tests/
+/parallel-feature       # plan + ship multi-file work as parallel subagent waves
 ```
 
 Otherwise just work normally — Claude consults the rules on demand. Machine-specific overrides go

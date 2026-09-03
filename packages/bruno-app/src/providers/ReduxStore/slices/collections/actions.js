@@ -82,6 +82,7 @@ import {
 import { each } from 'lodash';
 import { closeAllCollectionTabs, closeTabs as _closeTabs, focusTab, restoreTabs, reopenLastClosedTab } from 'providers/ReduxStore/slices/tabs';
 import { clearOpenApiSyncTabState } from 'providers/ReduxStore/slices/openapi-sync';
+import { resetCollectionGit } from 'providers/ReduxStore/slices/git';
 import { removeCollectionFromWorkspace } from 'providers/ReduxStore/slices/workspaces';
 import { resolveRequestFilename } from 'utils/common/platform';
 import { interpolateUrl, parsePathParams, splitOnFirst } from 'utils/url/index';
@@ -2613,6 +2614,7 @@ export const removeCollection = (collectionUid) => (dispatch, getState) => {
       .then((remainingWorkspaces) => {
         // Close tabs for this collection
         dispatch(closeAllCollectionTabs({ collectionUid }));
+        dispatch(resetCollectionGit(collectionUid));
 
         // Remove collection from workspace in Redux state
         if (activeWorkspace) {
@@ -3571,6 +3573,9 @@ export const closeTabs = ({ tabUids }) => async (dispatch, getState) => {
   const closingOpenApiSyncCollectionUids = (state.tabs?.tabs || [])
     .filter((t) => tabUids.includes(t.uid) && t.type === 'openapi-sync' && t.collectionUid)
     .map((t) => t.collectionUid);
+  const closingGitCollectionUids = (state.tabs?.tabs || [])
+    .filter((t) => tabUids.includes(t.uid) && t.type === 'git' && t.collectionUid)
+    .map((t) => t.collectionUid);
 
   // Close the tabs first
   await dispatch(_closeTabs({ tabUids }));
@@ -3586,6 +3591,11 @@ export const closeTabs = ({ tabUids }) => async (dispatch, getState) => {
   // Drop openapi-sync per-collection state (drift, storedSpec, tabUiState) for any closed openapi-sync tabs.
   for (const collectionUid of closingOpenApiSyncCollectionUids) {
     dispatch(clearOpenApiSyncTabState({ collectionUid }));
+  }
+
+  // Drop per-collection git state (status, branches, history, diff) for any closed git tabs.
+  for (const collectionUid of closingGitCollectionUids) {
+    dispatch(resetCollectionGit(collectionUid));
   }
 
   // Delete transient files after tabs are closed
