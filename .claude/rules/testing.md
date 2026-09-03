@@ -23,6 +23,26 @@ Projects: `default` (main), `system-pac` (depends on `default`), `auth`, `ssl`.
 `test:e2e:*` scripts. Config: `playwright.config.ts` — `fullyParallel: true`, `workers` unset
 (Playwright default, not single-worker), retries 0 local / 2 CI.
 
+### Running locally — two traps
+
+**Use `--workers=1` for Electron-heavy specs.** `workers` is unset, so Playwright defaults to
+one worker per core; each worker launches a full Electron app. On a typical dev machine that
+starves them and specs fail with `Test timeout of 30000ms exceeded` on ordinary steps — the
+same specs pass serially. A timeout under default workers is not evidence of a bug; re-run
+with `--workers=1` before believing it.
+
+**The first run of a session fails cold.** The rsbuild `webServer` needs ~2 minutes to come
+up, longer than the 30s `electronApp` fixture timeout, so the first spec reports
+`Fixture "electronApp" timeout of 30000ms exceeded` no matter what it asserts. Burn one
+warm-up run (`tests/start/app-open.spec.ts`) before trusting any failure. With `CI` set,
+`reuseExistingServer` is off and every run boots its own server, so two concurrent runs also
+collide on the port — never run two Playwright commands at once.
+
+**A green e2e needs setup that `npm i` does not do**: shared package dists built and
+`npm run sandbox:bundle-libraries --workspace=packages/bruno-js`. Without the latter the
+Electron main process exits at `packages/bruno-electron/src/index.js:13` and every launch
+times out on the fixture above. See `.claude/CLAUDE.md`.
+
 ## Test Fixtures (playwright/index.ts)
 
 See `playwright/index.ts` for the current set; the table covers the common ones.
