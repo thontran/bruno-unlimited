@@ -20,13 +20,12 @@ const config = {
   files: ['**/*'],
   afterSign: 'notarize.js',
   mac: {
-    artifactName: '${name}_${version}_${arch}_${os}.${ext}',
+    artifactName: 'bruno-unlimited_${version}_${arch}_${os}.${ext}',
     category: 'public.app-category.developer-tools',
+    // `pkg` is intentionally absent: it cannot be produced unsigned (electron-builder fails
+    // renaming <appId>.pkg), and it is only needed for installer/App Store distribution.
+    // Add it back alongside MAC_SIGN_IDENTITY if a signed .pkg is ever required.
     target: [
-      {
-        target: 'pkg',
-        arch: ['x64', 'arm64']
-      },
       {
         target: 'dmg',
         arch: ['x64', 'arm64']
@@ -59,7 +58,7 @@ const config = {
     ]
   },
   linux: {
-    artifactName: '${name}_${version}_${arch}_${os}.${ext}',
+    artifactName: 'bruno-unlimited_${version}_${arch}_${os}.${ext}',
     icon: 'resources/icons/png',
     target: [
       {
@@ -102,7 +101,7 @@ const config = {
     ]
   },
   win: {
-    artifactName: '${name}_${version}_${arch}_win.${ext}',
+    artifactName: 'bruno-unlimited_${version}_${arch}_win.${ext}',
     icon: 'resources/icons/win/icon.ico',
     target: [
       {

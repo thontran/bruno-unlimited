@@ -75,8 +75,10 @@ jobs:
           fi
           find packages/bruno-electron/web -name '*.map' -delete
 
+      # `--publish never`: electron-builder auto-publishes when it sees a tag and then dies with
+      # "GitHub Personal Access Token is not set". Releasing is this workflow's own job below.
       - name: Package Application
-        run: npm run ${{ matrix.dist }} --workspace=packages/bruno-electron
+        run: npm run ${{ matrix.dist }} --workspace=packages/bruno-electron -- --publish never
         env:
           # electron-builder picks these up only when present; absent means an unsigned build.
           MAC_SIGN_IDENTITY: ${{ secrets.MAC_SIGN_IDENTITY }}
