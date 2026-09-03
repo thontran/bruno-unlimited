@@ -310,19 +310,6 @@ const darkTheme = {
     }
   },
 
-  notifications: {
-    bg: palette.background.BASE,
-    list: {
-      bg: palette.background.BASE,
-      borderBottom: palette.border.BORDER0,
-      hoverBg: colors.GRAY_3,
-      active: {
-        bg: palette.background.SURFACE0,
-        hoverBg: colors.GRAY_4
-      }
-    }
-  },
-
   modal: {
     title: {
       color: palette.text.BASE,

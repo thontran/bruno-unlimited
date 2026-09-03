@@ -284,19 +284,6 @@ const catppuccinFrappeTheme = {
     }
   },
 
-  notifications: {
-    bg: colors.BASE,
-    list: {
-      bg: colors.BASE,
-      borderBottom: colors.SURFACE1,
-      hoverBg: colors.SURFACE1,
-      active: {
-        bg: colors.SURFACE0,
-        hoverBg: colors.SURFACE2
-      }
-    }
-  },
-
   modal: {
     title: {
       color: colors.TEXT,

@@ -93,6 +93,7 @@ export const tabsSlice = createSlice({
         'preferences',
         'workspaceOverview',
         'workspaceEnvironments',
+        'git',
         'openapi-sync',
         'openapi-spec',
         'changelog',

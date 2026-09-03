@@ -6,7 +6,6 @@ import Mousetrap from 'mousetrap';
 import { getKeyBindingsForActionAllOS } from 'providers/Hotkeys/keyMappings';
 import ToolHint from 'components/ToolHint';
 import Cookies from 'components/Cookies';
-import Notifications from 'components/Notifications';
 import Portal from 'components/Portal';
 import ThemeDropdown from './ThemeDropdown';
 import { openConsole } from 'providers/ReduxStore/slices/logs';
@@ -97,12 +96,6 @@ const StatusBar = () => {
                 <IconPalette size={16} strokeWidth={1.5} aria-hidden="true" />
               </button>
             </ThemeDropdown>
-
-            <ToolHint text="Notifications" toolhintId="Notifications" place="top" offset={10}>
-              <div className="status-bar-button">
-                <Notifications />
-              </div>
-            </ToolHint>
 
             <ToolHint text="GitHub Repository" toolhintId="GitHub" place="top" offset={10}>
               <button

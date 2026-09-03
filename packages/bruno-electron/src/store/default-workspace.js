@@ -15,7 +15,7 @@ const {
 const OPENCOLLECTION_VERSION = '1.0.0';
 const WORKSPACE_TYPE = 'workspace';
 const DEFAULT_WORKSPACE_UID = 'default';
-const MAX_WORKSPACE_CREATION_ATTEMPTS = 20;
+const DEFAULT_WORKSPACE_DIR_NAME = 'default-workspace';
 const GLOBAL_ENV_BACKUP_FILE = 'global-environments-backup.json';
 
 class DefaultWorkspaceManager {
@@ -29,20 +29,22 @@ class DefaultWorkspaceManager {
    */
   findExistingDefaultWorkspaces() {
     const configDir = app.getPath('userData');
-    const baseWorkspacePath = path.join(configDir, 'default-workspace');
-    const workspaces = [];
+    const dirNamePattern = new RegExp(`^${DEFAULT_WORKSPACE_DIR_NAME}(?:-(\\d+))?$`);
 
-    // Check base path
-    if (fs.existsSync(baseWorkspacePath)) {
-      workspaces.push({ path: baseWorkspacePath, index: 0 });
+    let entries;
+    try {
+      entries = fs.readdirSync(configDir, { withFileTypes: true });
+    } catch (error) {
+      console.error('Failed to list default workspace directories:', error);
+      return [];
     }
 
-    // Check numbered paths
-    for (let i = 1; i < MAX_WORKSPACE_CREATION_ATTEMPTS; i++) {
-      const numberedPath = `${baseWorkspacePath}-${i}`;
-      if (fs.existsSync(numberedPath)) {
-        workspaces.push({ path: numberedPath, index: i });
-      }
+    const workspaces = [];
+    for (const entry of entries) {
+      if (!entry.isDirectory()) continue;
+      const match = dirNamePattern.exec(entry.name);
+      if (!match) continue;
+      workspaces.push({ path: path.join(configDir, entry.name), index: match[1] ? Number(match[1]) : 0 });
     }
 
     // Sort by index descending (latest first)
@@ -229,17 +231,13 @@ class DefaultWorkspaceManager {
     const { migrateFromPreferences = true, recoveredData = null } = options;
 
     const configDir = app.getPath('userData');
-    const baseWorkspacePath = path.join(configDir, 'default-workspace');
+    const baseWorkspacePath = path.join(configDir, DEFAULT_WORKSPACE_DIR_NAME);
 
     let workspacePath = baseWorkspacePath;
     let counter = 1;
-    while (fs.existsSync(workspacePath) && counter < MAX_WORKSPACE_CREATION_ATTEMPTS) {
-      workspacePath = `${baseWorkspacePath}-${counter}`;
+    while (fs.existsSync(workspacePath)) {
+      workspacePath = path.join(configDir, `${DEFAULT_WORKSPACE_DIR_NAME}-${counter}`);
       counter++;
-    }
-
-    if (counter >= MAX_WORKSPACE_CREATION_ATTEMPTS) {
-      throw new Error('Unable to create default workspace: too many existing workspace directories');
     }
 
     fs.mkdirSync(workspacePath, { recursive: true });
