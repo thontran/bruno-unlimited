@@ -1,8 +1,11 @@
 require('dotenv').config({ path: process.env.DOTENV_PATH });
 
 const config = {
-  appId: 'com.usebruno.app',
-  productName: 'Bruno',
+  // Fork identity. Deliberately NOT com.usebruno.app / "Bruno": the upstream maintainer holds
+  // the Bruno trademark (see publishing.md), and a distinct appId keeps this install's userData
+  // separate so it can sit side by side with an official Bruno install.
+  appId: 'com.brunounlimited.app',
+  productName: 'Bruno Unlimited',
   electronVersion: '37.6.1',
   directories: {
     buildResources: 'resources',
@@ -35,11 +38,17 @@ const config = {
     ],
     icon: 'resources/icons/mac/icon.icns',
     hardenedRuntime: true,
-    identity: 'Anoop MD (W7LPPWA48L)',
+    // Upstream hardcoded its own Developer ID here, which makes any fork build fail. Opt in by
+    // setting MAC_SIGN_IDENTITY to your own identity; null means an unsigned local build.
+    identity: process.env.MAC_SIGN_IDENTITY || null,
     entitlements: 'resources/entitlements.mac.plist',
     entitlementsInherit: 'resources/entitlements.mac.plist',
     notarize: false,
     requirements: 'resources/app-requirements.txt',
+    // NOTE: the `bruno://` scheme below is intentionally unchanged — it carries the OAuth2
+    // callback (`bruno://app/oauth2/callback`) that oauth.usebruno.com redirects to, so
+    // renaming it would break OAuth2. Consequence: whichever install registered last owns
+    // `bruno://` deep links when an official Bruno is also installed.
     protocols: [
       {
         name: 'Bruno',
@@ -102,7 +111,8 @@ const config = {
       }
     ],
     sign: null,
-    publisherName: 'Bruno Software Inc'
+    // Unsigned: installs will show a SmartScreen warning until a code-signing cert is wired in.
+    publisherName: 'Bruno Unlimited'
   },
   nsis: {
     include: 'resources/installer.nsh',
