@@ -70,6 +70,10 @@ CLAUDE.local.md
 AGENTS.md
 *.plan.md
 
+# Agent planning artifacts (brainstorm/discovery/execution plans, subagent task briefs)
+history/
+.team/
+
 # packages dist
 packages/bruno-filestore/dist
 packages/bruno-requests/dist
