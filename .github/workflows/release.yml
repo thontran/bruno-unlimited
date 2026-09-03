@@ -75,12 +75,11 @@ jobs:
           fi
           find packages/bruno-electron/web -name '*.map' -delete
 
-      # `--publish=never`: electron-builder auto-publishes when it sees a tag and then dies with
-      # "GitHub Personal Access Token is not set". Releasing is this workflow's own job below.
-      # Must be one token — on Windows, `npm run ... -- --publish never` drops the flag name and
-      # passes a bare `never`, which electron-builder rejects as an unknown argument.
+      # Publishing is disabled in electron-builder-config.js (`publish: null`) rather than via a
+      # CLI flag: npm on Windows drops args forwarded to workspace scripts. Uploading happens in
+      # the release job below.
       - name: Package Application
-        run: npm run ${{ matrix.dist }} --workspace=packages/bruno-electron -- --publish=never
+        run: npm run ${{ matrix.dist }} --workspace=packages/bruno-electron
         env:
           # electron-builder picks these up only when present; absent means an unsigned build.
           MAC_SIGN_IDENTITY: ${{ secrets.MAC_SIGN_IDENTITY }}

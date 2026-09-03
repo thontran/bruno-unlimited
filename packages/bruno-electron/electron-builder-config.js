@@ -7,6 +7,11 @@ const config = {
   appId: 'com.brunounlimited.app',
   productName: 'Bruno Unlimited',
   electronVersion: '37.6.1',
+  // Never let electron-builder publish. With a tag present it otherwise defaults to the GitHub
+  // provider and aborts with "GitHub Personal Access Token is not set". Uploading is the
+  // release workflow's job. This lives in config, not as a `--publish=never` CLI flag, because
+  // npm on Windows drops forwarded args to workspace scripts.
+  publish: null,
   directories: {
     buildResources: 'resources',
     output: 'out'
