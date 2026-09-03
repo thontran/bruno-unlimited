@@ -12,7 +12,10 @@ export default defineConfig({
   fullyParallel: true,
   forbidOnly: !!process.env.CI,
   retries: process.env.CI ? 2 : 0,
-  workers: undefined,
+  // Unset = one worker per core. Each worker launches a full Electron app, so on a small CI
+  // runner (or a busy laptop) that starves them into spurious step timeouts — cap it with
+  // PLAYWRIGHT_WORKERS, or `--workers=1` locally.
+  workers: process.env.PLAYWRIGHT_WORKERS ? Number(process.env.PLAYWRIGHT_WORKERS) : undefined,
   reporter,
 
   use: {
