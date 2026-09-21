@@ -22,7 +22,7 @@ const statusLetter = (file) => {
     return 'R';
   }
   const code = file.type === 'staged' ? file.fileIndex : file.working_dir || file.fileIndex;
-  return code === '?' ? 'U' : (code || '').trim() || 'M';
+  return (code || '').trim() || 'M';
 };
 
 const changeLabel = (file) => (file.type === 'renamed' ? `${file.from} → ${file.to}` : file.path);

@@ -272,7 +272,30 @@ describe('GitPanel', () => {
     fireEvent.click(screen.getByTestId('git-history-file-row'));
     expect(callsFor('loadDiff')[0].args).toEqual([
       COLLECTION.uid,
-      { kind: 'commit', filePath: 'login.bru', commitHash: LOG[0].hash }
+      { kind: 'commit', filePath: 'login.bru', commitHash: LOG[0].hash, previousFilePath: null }
+    ]);
+  });
+
+  it('shows both names of a renamed commit file and diffs against both', () => {
+    renderPanel({
+      collectionGit: {
+        status: REPO_STATUS,
+        log: LOG,
+        commitFiles: {
+          [LOG[0].hash]: [{ path: 'new.bru', from: 'old.bru', to: 'new.bru', status: 'renamed' }]
+        }
+      }
+    });
+
+    fireEvent.click(screen.getByTestId('git-history-row'));
+    const row = screen.getByTestId('git-history-file-row');
+    expect(row).toHaveTextContent('old.bru → new.bru');
+    expect(row.querySelector('.file-status')).toHaveTextContent('R');
+
+    fireEvent.click(row);
+    expect(callsFor('loadDiff')[0].args).toEqual([
+      COLLECTION.uid,
+      { kind: 'commit', filePath: 'new.bru', commitHash: LOG[0].hash, previousFilePath: 'old.bru' }
     ]);
   });
 
@@ -348,5 +371,35 @@ describe('GitPanel', () => {
     renderPanel({ collectionGit: { status: REPO_STATUS, error: 'fatal: not a valid ref' } });
 
     expect(screen.getByTestId('git-error')).toHaveTextContent('fatal: not a valid ref');
+  });
+
+  it('shows the error instead of spinning forever when the first status read fails', () => {
+    renderPanel({ collectionGit: { status: null, error: 'fatal: detected dubious ownership' } });
+
+    expect(screen.queryByTestId('git-loading')).not.toBeInTheDocument();
+    expect(screen.getByTestId('git-error')).toHaveTextContent('fatal: detected dubious ownership');
+  });
+
+  it('labels an untracked file as added and a deleted file as deleted', () => {
+    renderPanel({
+      collectionGit: {
+        status: {
+          ...REPO_STATUS,
+          changes: {
+            ...REPO_STATUS.changes,
+            unstaged: [
+              { path: 'new.bru', type: 'unstaged', fileIndex: '?', working_dir: '?' },
+              { path: 'gone.bru', type: 'unstaged', fileIndex: ' ', working_dir: 'D' }
+            ]
+          }
+        }
+      }
+    });
+
+    const [untracked, deleted] = screen.getAllByTestId('git-changes-unstaged-row');
+    expect(untracked.querySelector('.change-status')).toHaveTextContent('?');
+    expect(untracked.querySelector('.change-status')).toHaveClass('added');
+    expect(deleted.querySelector('.change-status')).toHaveTextContent('D');
+    expect(deleted.querySelector('.change-status')).toHaveClass('deleted');
   });
 });

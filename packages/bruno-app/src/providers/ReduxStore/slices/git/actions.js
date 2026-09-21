@@ -66,13 +66,19 @@ export const fetchCommitFiles = (collectionUid, commitHash) =>
     return files;
   });
 
-export const loadDiff = (collectionUid, { kind, filePath, commitHash = null }) =>
+// `previousFilePath` is the pre-rename name, so a renamed file is diffed against both of its names.
+export const loadDiff = (collectionUid, { kind, filePath, commitHash = null, previousFilePath = null }) =>
   runGitOperation(collectionUid, 'Failed to load diff', async (collectionPath, dispatch) => {
-    const diff = await ipcRenderer.invoke('renderer:git:diff', collectionPath, { kind, filePath, commitHash });
+    const diff = await ipcRenderer.invoke('renderer:git:diff', collectionPath, {
+      kind,
+      filePath,
+      commitHash,
+      previousFilePath
+    });
     dispatch(
       setSelectedDiff({
         collectionUid,
-        diff: { kind, filePath, commitHash, raw: diff?.raw ?? '', visual: diff?.visual ?? null }
+        diff: { kind, filePath, commitHash, previousFilePath, raw: diff?.raw ?? '', visual: diff?.visual ?? null }
       })
     );
     return diff;
@@ -94,15 +100,22 @@ export const initGitRepo = (collectionUid) =>
  * Mutations resolve `undefined` in the main process — the renderer re-reads status (and the log
  * where history changed) afterwards. Refreshes run outside `runGitOperation` so a failing refresh
  * reports itself instead of being re-reported by the mutation.
+ *
+ * A mutation that rewrites the index or the working tree invalidates the open diff: the file may
+ * have moved between the staged and unstaged groups or stopped being a change at all, so the
+ * selection is dropped (`resetsDiff`) rather than left showing a patch that no longer applies.
  */
 const gitMutation
-  = (collectionUid, { channel, payload = {}, fallbackMessage, refreshLog = false }) =>
+  = (collectionUid, { channel, payload = {}, fallbackMessage, refreshLog = false, resetsDiff = true }) =>
     async (dispatch) => {
       await dispatch(
         runGitOperation(collectionUid, fallbackMessage, (collectionPath) =>
           ipcRenderer.invoke(channel, collectionPath, payload)
         )
       );
+      if (resetsDiff) {
+        dispatch(clearSelectedDiff({ collectionUid }));
+      }
       await dispatch(fetchGitStatus(collectionUid));
       if (refreshLog) {
         await dispatch(fetchGitLog(collectionUid));
@@ -114,13 +127,19 @@ const gitMutation
  * renderer-generated processUid the panel reads from `state.app.gitOperationProgress[processUid]`.
  */
 const gitProgressMutation
-  = (collectionUid, { channel, payload = {}, fallbackMessage, refreshLog = false }) =>
+  = (collectionUid, { channel, payload = {}, fallbackMessage, refreshLog = false, resetsDiff = true }) =>
     async (dispatch) => {
       const processUid = uuid();
       dispatch(setProcessUid({ collectionUid, processUid }));
       try {
         await dispatch(
-          gitMutation(collectionUid, { channel, payload: { ...payload, processUid }, fallbackMessage, refreshLog })
+          gitMutation(collectionUid, {
+            channel,
+            payload: { ...payload, processUid },
+            fallbackMessage,
+            refreshLog,
+            resetsDiff
+          })
         );
       } finally {
         dispatch(setProcessUid({ collectionUid, processUid: null }));
@@ -160,13 +179,15 @@ export const commitChanges = (collectionUid, message) =>
 export const fetchRemote = (collectionUid) =>
   gitMutation(collectionUid, {
     channel: 'renderer:git:fetch',
-    fallbackMessage: 'Failed to fetch from remote'
+    fallbackMessage: 'Failed to fetch from remote',
+    resetsDiff: false
   });
 
 export const pushChanges = (collectionUid) =>
   gitProgressMutation(collectionUid, {
     channel: 'renderer:git:push',
-    fallbackMessage: 'Failed to push changes'
+    fallbackMessage: 'Failed to push changes',
+    resetsDiff: false
   });
 
 export const pullChanges = (collectionUid, strategy = '--ff-only') =>

@@ -93,12 +93,14 @@ describe('git thunks — reads', () => {
     expect(invoke).toHaveBeenCalledWith('renderer:git:diff', COLLECTION_PATH, {
       kind: 'unstaged',
       filePath: 'a.bru',
-      commitHash: null
+      commitHash: null,
+      previousFilePath: null
     });
     expect(getGit(store).selectedDiff).toEqual({
       kind: 'unstaged',
       filePath: 'a.bru',
       commitHash: null,
+      previousFilePath: null,
       raw: '@@ -1 +1 @@',
       visual: null
     });
@@ -128,6 +130,30 @@ describe('git thunks — mutations refresh state', () => {
     expect(invoke).toHaveBeenCalledWith('renderer:git:stage', COLLECTION_PATH, { files: ['a.bru'] });
     expect(channelsCalled()).toEqual(['renderer:git:stage', 'renderer:git:status']);
     expect(getGit(store).status).toEqual(STATUS);
+  });
+
+  it('drops the open diff when a mutation rewrites the index', async () => {
+    invoke.mockImplementation((channel) =>
+      Promise.resolve(channel === 'renderer:git:status' ? STATUS : { raw: '@@ -1 +1 @@', visual: null })
+    );
+    const store = createStore();
+    await store.dispatch(actions.loadDiff(COLLECTION_UID, { kind: 'unstaged', filePath: 'a.bru' }));
+
+    await store.dispatch(actions.stageFiles(COLLECTION_UID, ['a.bru']));
+
+    expect(getGit(store).selectedDiff).toBeNull();
+  });
+
+  it('keeps the open diff across a fetch, which changes no file', async () => {
+    invoke.mockImplementation((channel) =>
+      Promise.resolve(channel === 'renderer:git:status' ? STATUS : { raw: '@@ -1 +1 @@', visual: null })
+    );
+    const store = createStore();
+    await store.dispatch(actions.loadDiff(COLLECTION_UID, { kind: 'unstaged', filePath: 'a.bru' }));
+
+    await store.dispatch(actions.fetchRemote(COLLECTION_UID));
+
+    expect(getGit(store).selectedDiff?.filePath).toBe('a.bru');
   });
 
   it('commitChanges refreshes both status and log', async () => {

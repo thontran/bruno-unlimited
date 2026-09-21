@@ -50,9 +50,18 @@ const GitPanel = ({ collection }) => {
   if (!status) {
     return (
       <PanelShell>
-        <div className="empty-state" data-testid="git-loading">
-          <IconRefresh className="animate-spin" size={20} strokeWidth={1.5} aria-hidden="true" />
-          <div className="empty-state-text">Reading repository…</div>
+        <div className="empty-state" data-testid={error ? 'git-error-state' : 'git-loading'}>
+          {error ? (
+            <>
+              <IconAlertCircle size={24} strokeWidth={1.5} aria-hidden="true" />
+              <div className="panel-error" data-testid="git-error">{error}</div>
+            </>
+          ) : (
+            <>
+              <IconRefresh className="animate-spin" size={20} strokeWidth={1.5} aria-hidden="true" />
+              <div className="empty-state-text">Reading repository…</div>
+            </>
+          )}
         </div>
       </PanelShell>
     );

@@ -16,8 +16,11 @@ const FILE_STATUS_LETTER = {
   deleted: 'D',
   modified: 'M',
   renamed: 'R',
+  copied: 'C',
   changed: 'C'
 };
+
+const fileLabel = (file) => (file.from && file.from !== file.path ? `${file.from} → ${file.path}` : file.path);
 
 /**
  * Commit history for the collection's repository. Expanding a row pulls its file list once
@@ -91,16 +94,21 @@ const HistoryList = ({ collectionUid, log, commitFiles, selectedDiff }) => {
                     key={`${commit.hash}-${file.path}`}
                     className={`commit-file-row ${isSelectedFile(commit.hash, file.path) ? 'selected' : ''}`}
                     onClick={() => runGitAction(
-                      loadDiff(collectionUid, { kind: 'commit', filePath: file.path, commitHash: commit.hash })
+                      loadDiff(collectionUid, {
+                        kind: 'commit',
+                        filePath: file.path,
+                        commitHash: commit.hash,
+                        previousFilePath: file.from || null
+                      })
                     )}
                     data-testid="git-history-file-row"
                     data-path={file.path}
-                    title={file.path}
+                    title={fileLabel(file)}
                   >
                     <span className={`file-status ${FILE_STATUS_CLASS[file.status] || ''}`}>
                       {FILE_STATUS_LETTER[file.status] || '?'}
                     </span>
-                    <span className="file-path">{file.path}</span>
+                    <span className="file-path">{fileLabel(file)}</span>
                   </div>
                 ))
               ) : (

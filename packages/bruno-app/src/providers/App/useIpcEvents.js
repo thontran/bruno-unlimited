@@ -3,7 +3,8 @@ import {
   updateCookies,
   updatePreferences,
   setGitVersion,
-  setIsOpeningCollection
+  setIsOpeningCollection,
+  updateGitOperationProgress
 } from 'providers/ReduxStore/slices/app';
 import {
   updateServerStatus,
@@ -381,6 +382,11 @@ const useIpcEvents = () => {
       dispatch(setGitVersion(val));
     });
 
+    // clone/push/pull/checkout stream their git output here, keyed by the operation's processUid
+    const removeGitOperationProgressListener = ipcRenderer.on('main:update-git-operation-progress', (val) => {
+      dispatch(updateGitOperationProgress(val));
+    });
+
     // Mock server events
     const removeMockServerStatusListener = ipcRenderer.on('main:mock-server-status-changed', (val) => {
       dispatch(updateServerStatus(val));
@@ -460,6 +466,7 @@ const useIpcEvents = () => {
       removeRuntimeVariablesUpdateListener();
       removeSystemResourcesListener();
       gitVersionListener();
+      removeGitOperationProgressListener();
       removeMockServerStatusListener();
       removeMockServerRequestLogListener();
       removeMockServerAddedListener();

@@ -369,10 +369,18 @@ const getGitDiff = async (mainWindow, collectionPath, payload = {}) => {
 
   const { absolutePath, relativePath } = resolveInsideRepo(gitRootPath, payload.filePath);
   const commitHash = kind === 'commit' ? assertCommitHash(payload.commitHash) : null;
+  // A renamed file is diffed against both of its names, so the rename is visible as such.
+  const previousPath = payload.previousFilePath
+    ? resolveInsideRepo(gitRootPath, payload.previousFilePath).absolutePath
+    : null;
 
   let raw;
   if (kind === 'commit') {
-    raw = await getCommitFileDiff(gitRootPath, commitHash, absolutePath);
+    raw = await getCommitFileDiff(
+      gitRootPath,
+      commitHash,
+      previousPath ? [absolutePath, previousPath] : [absolutePath]
+    );
   } else if (kind === 'staged') {
     raw = await getStagedFileDiff(gitRootPath, absolutePath);
   } else {

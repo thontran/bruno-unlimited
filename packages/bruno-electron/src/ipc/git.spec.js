@@ -350,6 +350,24 @@ describe('getGitDiff', () => {
     expect(gitUtils.getFileContentForVisualDiff).toHaveBeenCalledWith(GIT_ROOT, 'abcdef1234567', 'collection/a.bru');
   });
 
+  it('diffs a renamed commit file against both of its names', async () => {
+    mockRepo();
+    gitUtils.getCommitFileDiff.mockResolvedValue('rename from old.bru');
+    gitUtils.supportsVisualDiff.mockReturnValue(false);
+
+    await getGitDiff(MAIN_WINDOW, COLLECTION_PATH, {
+      kind: 'commit',
+      filePath: 'collection/new.bru',
+      previousFilePath: 'collection/old.bru',
+      commitHash: 'abcdef1234567'
+    });
+
+    expect(gitUtils.getCommitFileDiff).toHaveBeenCalledWith(GIT_ROOT, 'abcdef1234567', [
+      path.join(GIT_ROOT, 'collection', 'new.bru'),
+      path.join(GIT_ROOT, 'collection', 'old.bru')
+    ]);
+  });
+
   it('rejects a diff for a path outside the repository', async () => {
     mockRepo();
 
