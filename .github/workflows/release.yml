@@ -1,0 +1,137 @@
+name: Release
+
+# Builds the desktop app for Windows, macOS and Linux and attaches the installers to a GitHub
+# Release. There is no upstream equivalent — npm-bru-cli.yml only covers the CLI, and desktop
+# packaging was previously a manual `npm run build:electron` on a developer machine.
+#
+# Trigger with a tag:  git tag v2.0.0 && git push origin v2.0.0
+# Or run manually from the Actions tab (workflow_dispatch) to produce a draft without tagging.
+#
+# Signing is opt-in and absent by default:
+#   - Windows installers are unsigned (SmartScreen will warn).
+#   - macOS builds are unsigned unless MAC_SIGN_IDENTITY is available, and are only notarized
+#     when APPLE_ID + APPLE_ID_PASSWORD + APPLE_TEAM_ID are all set as repository secrets.
+
+on:
+  workflow_dispatch:
+    inputs:
+      version:
+        description: 'Version tag to build (e.g. v2.0.0). Blank builds the current ref.'
+        required: false
+        default: ''
+  push:
+    tags: ['v*']
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    name: Build ${{ matrix.name }}
+    timeout-minutes: 90
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - os: windows-latest
+            name: windows
+            dist: dist:win
+          - os: macos-latest
+            name: macos
+            dist: dist:mac
+          - os: ubuntu-latest
+            name: linux
+            dist: dist:linux
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          ref: ${{ github.event.inputs.version || github.ref }}
+
+      # Builds the shared package dists and bundles the bruno-js sandbox libraries.
+      - name: Setup Node Dependencies
+        uses: ./.github/actions/common/setup-node-deps
+
+      - name: Build Renderer Bundle
+        run: npm run build:web
+
+      # Mirrors scripts/build-electron.js: stage the renderer into bruno-electron/web, rewrite
+      # asset paths to be relative, and strip sourcemaps — then package for this platform only.
+      - name: Stage Renderer Into Electron
+        shell: bash
+        run: |
+          rm -rf packages/bruno-electron/out packages/bruno-electron/web
+          mkdir -p packages/bruno-electron/web
+          cp -r packages/bruno-app/dist/. packages/bruno-electron/web/
+          find packages/bruno-electron/web -maxdepth 1 -name '*.html' \
+            -exec sed -i.bak 's|/static|./static|g' {} \; -exec rm -f {}.bak \;
+          if [ -d packages/bruno-electron/web/static/css ]; then
+            find packages/bruno-electron/web/static/css -name '*.css' \
+              -exec sed -i.bak 's|/static/font|../../static/font|g' {} \; -exec rm -f {}.bak \;
+          fi
+          find packages/bruno-electron/web -name '*.map' -delete
+
+      # Publishing is disabled in electron-builder-config.js (`publish: null`) rather than via a
+      # CLI flag: npm on Windows drops args forwarded to workspace scripts. Uploading happens in
+      # the release job below.
+      - name: Package Application
+        run: npm run ${{ matrix.dist }} --workspace=packages/bruno-electron
+        env:
+          # electron-builder picks these up only when present; absent means an unsigned build.
+          MAC_SIGN_IDENTITY: ${{ secrets.MAC_SIGN_IDENTITY }}
+          APPLE_ID: ${{ secrets.APPLE_ID }}
+          APPLE_ID_PASSWORD: ${{ secrets.APPLE_ID_PASSWORD }}
+          APPLE_TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
+
+      - name: Upload Installers
+        uses: actions/upload-artifact@v6
+        with:
+          name: installers-${{ matrix.name }}
+          # Ship installers only — skip unpacked app dirs and builder metadata.
+          path: |
+            packages/bruno-electron/out/*.exe
+            packages/bruno-electron/out/*.dmg
+            packages/bruno-electron/out/*.pkg
+            packages/bruno-electron/out/*.zip
+            packages/bruno-electron/out/*.AppImage
+            packages/bruno-electron/out/*.deb
+            packages/bruno-electron/out/*.rpm
+            packages/bruno-electron/out/*.snap
+          if-no-files-found: error
+          retention-days: 14
+
+  release:
+    name: Publish Draft Release
+    needs: [build]
+    # Only a tag push produces a Release; a manual run just leaves the artifacts above.
+    if: startsWith(github.ref, 'refs/tags/v')
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - name: Download Installers
+        uses: actions/download-artifact@v6
+        with:
+          path: installers
+          pattern: installers-*
+          merge-multiple: true
+
+      - name: Create Draft Release
+        uses: softprops/action-gh-release@v2
+        with:
+          draft: true
+          generate_release_notes: true
+          files: installers/*
+          body: |
+            Unofficial community build of Bruno with every feature enabled.
+
+            Not affiliated with or endorsed by Bruno Software Inc. "Bruno" is a trademark of
+            its respective owner; this fork ships as **Bruno Unlimited** with its own
+            application id so it installs alongside an official Bruno.
+
+            Installers are **unsigned**: Windows shows a SmartScreen warning, and macOS
+            requires right-click → Open (or `xattr -dr com.apple.quarantine`) on first launch.

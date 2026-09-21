@@ -289,19 +289,6 @@ const vscodeDarkTheme = {
     }
   },
 
-  notifications: {
-    bg: colors.EDITOR_BG,
-    list: {
-      bg: colors.EDITOR_BG,
-      borderBottom: colors.BORDER,
-      hoverBg: colors.GRAY_4,
-      active: {
-        bg: colors.GRAY_3,
-        hoverBg: colors.GRAY_5
-      }
-    }
-  },
-
   modal: {
     title: {
       color: colors.TEXT,

@@ -271,19 +271,6 @@ const darkMonochromeTheme = {
     }
   },
 
-  notifications: {
-    bg: colors.BG,
-    list: {
-      bg: colors.BG,
-      borderBottom: '#545454',
-      hoverBg: colors.GRAY_3,
-      active: {
-        bg: colors.GRAY_2,
-        hoverBg: colors.GRAY_4
-      }
-    }
-  },
-
   modal: {
     title: {
       color: '#ccc',

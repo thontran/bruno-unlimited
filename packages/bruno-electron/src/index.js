@@ -57,7 +57,6 @@ const ApiSpecWatcher = require('./app/apiSpecsWatcher');
 const { loadWindowState, saveBounds, saveMaximized } = require('./utils/window');
 const { preferencesUtil, getPreferences, savePreferences } = require('./store/preferences');
 const { globalEnvironmentsManager } = require('./store/workspace-environments');
-const registerNotificationsIpc = require('./ipc/notifications');
 const registerGlobalEnvironmentsIpc = require('./ipc/global-environments');
 const TerminalManager = require('./ipc/terminal');
 const { safeParseJSON, safeStringifyJSON } = require('./utils/common');
@@ -76,7 +75,7 @@ const apiSpecWatcher = new ApiSpecWatcher();
 // Reference: https://content-security-policy.com/
 const contentSecurityPolicy = [
   'default-src \'self\'',
-  'connect-src \'self\' https://*.posthog.com',
+  'connect-src \'self\'',
   'font-src \'self\' https: data:;',
   'frame-src data:',
   'script-src \'self\' data:',
@@ -518,7 +517,6 @@ app.on('ready', async () => {
   registerSnapshotIpc();
   registerWorkspaceIpc(mainWindow, workspaceWatcher);
   registerApiSpecIpc(mainWindow, apiSpecWatcher);
-  registerNotificationsIpc(mainWindow, collectionWatcher);
   registerFilesystemIpc(mainWindow);
   registerSystemMonitorIpc(mainWindow, systemMonitor);
   registerGitIpc(mainWindow);

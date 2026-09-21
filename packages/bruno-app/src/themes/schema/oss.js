@@ -403,34 +403,6 @@ export const ossSchema = {
       additionalProperties: false
     },
 
-    notifications: {
-      type: 'object',
-      properties: {
-        bg: { type: 'string' },
-        list: {
-          type: 'object',
-          properties: {
-            bg: { type: 'string' },
-            borderBottom: { type: 'string' },
-            hoverBg: { type: 'string' },
-            active: {
-              type: 'object',
-              properties: {
-                bg: { type: 'string' },
-                hoverBg: { type: 'string' }
-              },
-              required: ['bg', 'hoverBg'],
-              additionalProperties: false
-            }
-          },
-          required: ['bg', 'borderBottom', 'hoverBg', 'active'],
-          additionalProperties: false
-        }
-      },
-      required: ['bg', 'list'],
-      additionalProperties: false
-    },
-
     modal: {
       type: 'object',
       properties: {
@@ -1203,7 +1175,7 @@ export const ossSchema = {
   required: [
     'mode', 'brand', 'text', 'textLink', 'draftColor', 'bg', 'primary', 'accents', 'background', 'status', 'overlay', 'font', 'shadow', 'border', 'colors', 'input',
     'sidebar', 'dropdown', 'workspace', 'request',
-    'requestTabPanel', 'notifications', 'modal', 'button', 'button2', 'tabs',
+    'requestTabPanel', 'modal', 'button', 'button2', 'tabs',
     'requestTabs', 'codemirror', 'table', 'plainGrid', 'scrollbar', 'dragAndDrop',
     'infoTip', 'statusBar', 'console', 'grpc', 'deprecationWarning', 'examples', 'app'
   ],

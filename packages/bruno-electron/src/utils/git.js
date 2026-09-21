@@ -8,6 +8,51 @@ let collectionPathToGitRootPathMap = new Map();
 
 const simpleGitInstances = new Map();
 
+// Index codes that mean "this path has something staged": modified, added, deleted, renamed, copied.
+const STAGED_INDEX_CODES = ['M', 'A', 'D', 'R', 'C'];
+// `git show --name-status` emits a status letter, an optional similarity score for R/C, then one
+// path — or two tab separated paths for renames and copies.
+const NAME_STATUS_REGEX = /^([ACDMRT])(\d+)?\t(.+)$/;
+
+// Porcelain conflict states: DD, AU, UD, UA, DU, AA and UU.
+const isConflicted = (file) =>
+  file.index === 'U'
+  || file.working_dir === 'U'
+  || (file.index === 'A' && file.working_dir === 'A')
+  || (file.index === 'D' && file.working_dir === 'D');
+
+const parseNameStatusLines = (output) => {
+  const lines = (output || '').trim().split('\n').filter((line) => line.trim());
+  const files = [];
+
+  for (const line of lines) {
+    const match = line.match(NAME_STATUS_REGEX);
+    if (!match) {
+      continue;
+    }
+
+    const [, status, , paths] = match;
+    const [firstPath, secondPath] = paths.split('\t');
+
+    if ((status === 'R' || status === 'C') && secondPath) {
+      files.push({
+        path: secondPath,
+        from: firstPath,
+        to: secondPath,
+        status: status === 'R' ? 'renamed' : 'copied'
+      });
+      continue;
+    }
+
+    files.push({
+      path: firstPath,
+      status: status === 'A' ? 'added' : status === 'D' ? 'deleted' : status === 'M' ? 'modified' : 'changed'
+    });
+  }
+
+  return files;
+};
+
 const getGitVersion = () => {
   return new Promise((resolve, reject) => {
     exec('git --version', (error, stdout, stderr) => {
@@ -107,44 +152,50 @@ const stageChanges = async (gitRootPath, files) => {
   });
 };
 
+const hasCommits = async (git) => {
+  try {
+    await git.raw(['rev-parse', '--verify', 'HEAD']);
+    return true;
+  } catch (error) {
+    return false;
+  }
+};
+
 const unstageChanges = async (gitRootPath, files) => {
-  return new Promise((resolve, reject) => {
-    const git = getSimpleGitInstanceForPath(gitRootPath);
+  const git = getSimpleGitInstanceForPath(gitRootPath);
+  const status = await git.status(['--porcelain']);
 
-    // First check the status to see which files are actually staged
-    git.status(['--porcelain'], (err, status) => {
-      if (err) {
-        reject(err);
-        return;
+  // A staged rename occupies two index entries; resetting only the destination leaves the
+  // deletion of the source staged, so both pathspecs go to git.
+  const stagedFiles = new Set();
+  files.forEach((fullPath) => {
+    const normalizedPath = path.relative(gitRootPath, fullPath).replace(/\\/g, '/');
+    const entry = status.files.find((file) => file.path === normalizedPath);
+    if (!entry || !STAGED_INDEX_CODES.includes(entry.index)) {
+      return;
+    }
+
+    stagedFiles.add(fullPath);
+
+    if (entry.index === 'R' || entry.index === 'C') {
+      const rename = (status.renamed || []).find((file) => file.to === normalizedPath);
+      if (rename?.from) {
+        stagedFiles.add(path.resolve(gitRootPath, rename.from));
       }
-
-      // Filter files to only include those that are actually staged
-      const stagedFiles = files.filter((fullPath) => {
-        const relativePath = path.relative(gitRootPath, fullPath);
-        // Normalize path separators for cross-platform compatibility
-        const normalizedPath = relativePath.replace(/\\/g, '/');
-        return status.files.some((file) =>
-          file.path === normalizedPath
-          && (file.index === 'M' || file.index === 'A' || file.index === 'D')
-        );
-      });
-
-      // If no files are actually staged, just resolve
-      if (stagedFiles.length === 0) {
-        resolve();
-        return;
-      }
-
-      // Unstage only the files that are actually staged
-      git.reset(['HEAD', '--', ...stagedFiles], (err, res) => {
-        if (err) {
-          reject(err);
-          return;
-        }
-        resolve(res);
-      });
-    });
+    }
   });
+
+  if (stagedFiles.size === 0) {
+    return;
+  }
+
+  // `git reset HEAD` needs a commit to reset against; before the first commit the index is
+  // emptied with `rm --cached`, which leaves the working tree untouched.
+  const pathspecs = [...stagedFiles];
+  if (await hasCommits(git)) {
+    return git.reset(['HEAD', '--', ...pathspecs]);
+  }
+  return git.raw(['rm', '--cached', '-r', '--', ...pathspecs]);
 };
 
 const discardChanges = async (gitRootPath, filePaths) => {
@@ -642,9 +693,8 @@ async function getChangedFilesInCollectionGit(_gitRootPath, _collectionPath) {
 
       const unstaged = await Promise.all(
         status.files
-          .filter(
-            (file) => file.index === '?' || file.index === ' ' || file.working_dir === '?' || file.working_dir === 'M'
-          )
+          // Any working-tree code other than "unchanged" is a local change: `M`, `D`, `T` and `?`.
+          .filter((file) => Boolean((file.working_dir || '').trim()) && !isConflicted(file))
           .map(async (file) => {
             return { path: file.path, type: 'unstaged', fileIndex: file.index, working_dir: file.working_dir };
           })
@@ -658,18 +708,14 @@ async function getChangedFilesInCollectionGit(_gitRootPath, _collectionPath) {
 
       const staged = await Promise.all(
         status.files
-          .filter(
-            (file) =>
-              (file.index === 'M' || file.index === 'A' || file.index === 'D')
-              && (file.working_dir === 'M' || file.working_dir === ' ')
-          )
+          .filter((file) => ['M', 'A', 'D'].includes(file.index) && !isConflicted(file))
           .map(async (file) => {
             return { path: file.path, type: 'staged', fileIndex: file.index, working_dir: file.working_dir };
           })
       );
 
       const conflicted = await Promise.all(
-        status.files.filter((file) => file.index === 'U' || file.working_dir === 'U').map(async (file) => {
+        status.files.filter(isConflicted).map(async (file) => {
           return { path: file.path, type: 'conflicted', fileIndex: file.index, working_dir: file.working_dir };
         }) || []
       );
@@ -1043,31 +1089,19 @@ const getCommitFiles = async (gitRootPath, commitHash) => {
         return;
       }
 
-      const lines = result.trim().split('\n').filter((line) => line.trim());
-      const files = [];
-
-      for (const line of lines) {
-        // Parse name-status format: M<tab>filename or A<tab>filename or D<tab>filename
-        const match = line.match(/^([AMDRC])\t(.+)$/);
-        if (match) {
-          const [, status, filePath] = match;
-          files.push({
-            path: filePath,
-            status: status === 'A' ? 'added' : status === 'D' ? 'deleted' : status === 'M' ? 'modified' : status === 'R' ? 'renamed' : 'changed'
-          });
-        }
-      }
-
-      resolve(files);
+      resolve(parseNameStatusLines(result));
     });
   });
 };
 
-const getCommitFileDiff = async (gitRootPath, commitHash, filePath) => {
+// `filePaths` carries both names of a rename: limiting the pathspec to the destination alone
+// hides the rename and reports the file as newly added.
+const getCommitFileDiff = async (gitRootPath, commitHash, filePaths) => {
+  const pathspecs = Array.isArray(filePaths) ? filePaths : [filePaths];
   return new Promise((resolve, reject) => {
     const git = getSimpleGitInstanceForPath(gitRootPath);
     // Get the diff for a specific file in a commit (compare with parent)
-    git.raw(['show', '--no-prefix', '-p', commitHash, '--', filePath], (err, diff) => {
+    git.raw(['show', '--no-prefix', '-p', commitHash, '--', ...pathspecs], (err, diff) => {
       if (err) {
         reject(err);
         return;
@@ -1809,6 +1843,7 @@ module.exports = {
   getStashFiles,
   getStashFileDiff,
   getFileContentAtCommit,
+  supportsVisualDiff,
   getFileContentForVisualDiff,
   getWorkingFileContentForVisualDiff,
   getStashFileContentForVisualDiff

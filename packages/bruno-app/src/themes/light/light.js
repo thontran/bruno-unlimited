@@ -300,19 +300,6 @@ const lightTheme = {
     }
   },
 
-  notifications: {
-    bg: palette.background.BASE,
-    list: {
-      bg: palette.background.BASE,
-      borderBottom: palette.border.BORDER0,
-      hoverBg: palette.background.SURFACE1,
-      active: {
-        bg: palette.background.SURFACE0,
-        hoverBg: palette.background.SURFACE2
-      }
-    }
-  },
-
   modal: {
     title: {
       color: palette.text.BASE,

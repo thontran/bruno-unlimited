@@ -8,28 +8,37 @@ const notarize = async function (params) {
     return;
   }
 
-  let appId = 'com.usebruno.app';
+  const { APPLE_ID, APPLE_ID_PASSWORD, APPLE_TEAM_ID } = process.env;
 
-  let appPath = path.join(params.appOutDir, `${params.packager.appInfo.productFilename}.app`);
+  // Upstream hardcoded its own appId and teamId here, so a fork build would attempt to notarize
+  // under someone else's identity. Notarization is now opt-in: without all three credentials
+  // there is nothing to notarize against, so skip instead of failing a local/unsigned build.
+  if (!APPLE_ID || !APPLE_ID_PASSWORD || !APPLE_TEAM_ID) {
+    console.log('Skipping notarization: APPLE_ID, APPLE_ID_PASSWORD and APPLE_TEAM_ID are not all set.');
+    return;
+  }
+
+  const appId = params.packager.appInfo.macBundleIdentifier;
+  const appPath = path.join(params.appOutDir, `${params.packager.appInfo.productFilename}.app`);
   if (!fs.existsSync(appPath)) {
     console.error(`Cannot find application at: ${appPath}`);
     return;
   }
 
-  console.log(`Notarizing ${appId} found at ${appPath} using Apple ID ${process.env.APPLE_ID}`);
-  const teamId = 'W7LPPWA48L';
+  console.log(`Notarizing ${appId} found at ${appPath} using Apple ID ${APPLE_ID}`);
   try {
     await electron_notarize.notarize({
       tool: 'notarytool',
       appBundleId: appId,
       appPath: appPath,
-      appleId: process.env.APPLE_ID,
-      appleIdPassword: process.env.APPLE_ID_PASSWORD,
-      ascProvider: teamId,
-      teamId: teamId
+      appleId: APPLE_ID,
+      appleIdPassword: APPLE_ID_PASSWORD,
+      ascProvider: APPLE_TEAM_ID,
+      teamId: APPLE_TEAM_ID
     });
   } catch (error) {
     console.error(error);
+    throw error;
   }
 
   console.log(`Done notarizing ${appPath}`);

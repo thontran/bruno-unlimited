@@ -23,6 +23,7 @@ const SINGLETON_TAB_TYPES = new Set([
   'preferences',
   'workspaceOverview',
   'workspaceEnvironments',
+  'git',
   'openapi-sync',
   'openapi-spec',
   'mock-server'
@@ -31,6 +32,7 @@ const SINGLETON_TAB_TYPES = new Set([
 const NON_REPLACEABLE_SINGLETON_TAB_TYPES = new Set([
   'collection-runner',
   'variables',
+  'git',
   'openapi-sync',
   'openapi-spec',
   'mock-server'

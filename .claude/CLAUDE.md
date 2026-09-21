@@ -23,6 +23,10 @@ Full script list: root `package.json`. Setup: `nvm use && npm i --legacy-peer-de
 npm test --workspace=packages/bruno-app -- path/to/file.spec.js
 npm test --workspace=packages/bruno-requests -- -t "test name pattern"
 
+# bruno-electron on Windows: `npm test` there is broken (`$(npx which jest)` is not expanded
+# by cmd) — use test:ci, which runs the same jest with the same pattern
+npm run test:ci --workspace=packages/bruno-electron -- ipc/git
+
 # Single e2e test (Playwright) — a project flag is REQUIRED (config has no default)
 npx playwright test tests/collection/create-collection.spec.ts --project=default
 npx playwright test --project=default -g "test name pattern"
@@ -40,6 +44,11 @@ After editing one, rebuild it or run its watcher, or the app won't pick up chang
 npm run build:bruno-common      # also :bruno-requests, :bruno-filestore, etc.
 npm run watch:common            # also watch:requests, watch:converters
 ```
+
+A first e2e run also needs `npm run sandbox:bundle-libraries --workspace=packages/bruno-js`
+(part of `npm run setup`). Without it the main process exits at
+`packages/bruno-electron/src/index.js:13` and every Playwright launch times out. Local
+Playwright also needs `--workers=1` — see `.claude/rules/testing.md`.
 
 ## Key Architecture
 

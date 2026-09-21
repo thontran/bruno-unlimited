@@ -287,19 +287,6 @@ const darkPastelTheme = {
     }
   },
 
-  notifications: {
-    bg: colors.BG,
-    list: {
-      bg: colors.BG,
-      borderBottom: colors.GRAY_4,
-      hoverBg: colors.GRAY_4,
-      active: {
-        bg: colors.GRAY_3,
-        hoverBg: colors.GRAY_5
-      }
-    }
-  },
-
   modal: {
     title: {
       color: colors.TEXT,

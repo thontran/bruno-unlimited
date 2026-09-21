@@ -270,19 +270,6 @@ const lightMonochromeTheme = {
     }
   },
 
-  notifications: {
-    bg: colors.BACKGROUND,
-    list: {
-      bg: colors.BACKGROUND,
-      borderBottom: '#d3d3d3',
-      hoverBg: colors.GRAY_4,
-      active: {
-        bg: colors.GRAY_3,
-        hoverBg: colors.GRAY_5
-      }
-    }
-  },
-
   modal: {
     title: {
       color: 'rgb(86 86 86)',

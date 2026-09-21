@@ -39,19 +39,14 @@ You can use Git or any version control of your choice to collaborate over your A
 
 Bruno is offline-only. There are no plans to add cloud-sync to Bruno, ever. We value your data privacy and believe it should stay on your device. Read our long-term vision [here](https://github.com/usebruno/bruno/discussions/269)
 
+This fork ships every feature free, with unlimited workspaces and no paid tiers.
+
 [Download Bruno](https://www.usebruno.com/downloads)
 
 📢 Watch our recent talk at India FOSS 3.0 Conference [here](https://www.youtube.com/watch?v=7bSMFpbcPiY)
 
 ![bruno](assets/images/landing-2-dark.png#gh-light-mode-only)
 ![bruno](assets/images/landing-2-light.png#gh-dark-mode-only) <br /><br />
-
-## Commercial Versions ✨
-
-Majority of our features are free and open source.
-We strive to strike a harmonious balance between [open-source principles and sustainability](https://github.com/usebruno/bruno/discussions/269)
-
-You can explore our [paid versions](https://www.usebruno.com/pricing) to see if there are additional features that you or your team may find useful! <br/>
 
 ## Table of Contents
 
@@ -171,7 +166,6 @@ Or any version control system of your choice
 - [Documentation](https://docs.usebruno.com)
 - [Stack Overflow](https://stackoverflow.com/questions/tagged/bruno)
 - [Website](https://www.usebruno.com)
-- [Pricing](https://www.usebruno.com/pricing)
 - [Download](https://www.usebruno.com/downloads)
 
 ## Showcase 🎥

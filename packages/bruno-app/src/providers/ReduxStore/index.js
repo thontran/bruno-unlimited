@@ -4,7 +4,6 @@ import debugMiddleware from './middlewares/debug/middleware';
 import appReducer from './slices/app';
 import collectionsReducer from './slices/collections';
 import tabsReducer from './slices/tabs';
-import notificationsReducer from './slices/notifications';
 import globalEnvironmentsReducer from './slices/global-environments';
 import logsReducer from './slices/logs';
 import performanceReducer from './slices/performance';
@@ -14,6 +13,7 @@ import openapiSyncReducer from './slices/openapi-sync';
 import mockServerReducer from './slices/mock-server/index';
 import chatReducer from './slices/chat';
 import collectionMigrationReducer from './slices/collection-migration';
+import gitReducer from './slices/git';
 import { draftDetectMiddleware } from './middlewares/draft/middleware';
 import { autosaveMiddleware } from './middlewares/autosave/middleware';
 import { snapshotMiddleware } from './middlewares/snapshot/middleware';
@@ -32,7 +32,6 @@ export const store = configureStore({
     app: appReducer,
     collections: collectionsReducer,
     tabs: tabsReducer,
-    notifications: notificationsReducer,
     globalEnvironments: globalEnvironmentsReducer,
     logs: logsReducer,
     performance: performanceReducer,
@@ -41,7 +40,8 @@ export const store = configureStore({
     openapiSync: openapiSyncReducer,
     mockServer: mockServerReducer,
     chat: chatReducer,
-    collectionMigration: collectionMigrationReducer
+    collectionMigration: collectionMigrationReducer,
+    git: gitReducer
   },
   middleware: (getDefaultMiddleware) => getDefaultMiddleware().concat(middleware)
 });
